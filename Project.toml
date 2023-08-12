@@ -1,7 +1,8 @@
 name = "QuantumHarmonicBalance"
 authors = ["Orjan Ameye"]
+
+[deps]
+QuantumCumulants = "35bcea6d-e19f-57db-af74-8011de6c7255"
+
 [compat]
 julia = "1.9.2"
-DrWatson = "2.12.7"
-[deps]
-DrWatson = "634d3b9d-ee7a-5ddf-bec9-22491ea816e1"
