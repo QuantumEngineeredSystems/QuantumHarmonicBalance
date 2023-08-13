@@ -1,5 +1,6 @@
 module QuantumHarmonicBalance
 
-# Write your package code here.
+using Reexport
+@reexport using QuantumCumulants
 
 end
