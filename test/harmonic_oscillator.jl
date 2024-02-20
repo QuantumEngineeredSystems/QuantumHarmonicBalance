@@ -22,7 +22,7 @@ J = [a]
 rates = [κ]
 
 eqs_a = meanfield(a, H, J; rates=rates, order=1); complete!(eqs_a)
-eqs_n = meanfield(a'*a, H, J; rates=rates, order=2);complete!(eqs_n)
+eqs_n = meanfield(a'*a, H, J; rates=rates, order=2); complete!(eqs_n)
 
 @named sys = ODESystem(eqs_a)
 
