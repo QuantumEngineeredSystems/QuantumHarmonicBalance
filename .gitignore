@@ -3,3 +3,5 @@
 docs/build/**
 .ipynb_checkpoints
 Manifest.toml
+docs/Manifest.toml
+.JuliaFormatter.toml
