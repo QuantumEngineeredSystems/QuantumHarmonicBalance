@@ -1,16 +1,24 @@
-function perform_hadamard(X, Y; cut=10)
-    out = 1
-    term_prev = 0
-    for i in 0:cut
-        term = i==0 ? Y : commutator(X, term_prev)
-        term = simplify(term/factorial(i))
-        out += term
+using QuantumCumulants: check_hilbert, QMul, QSym, Create, Destroy, simplify, QAdd
+
+function rotate(input::QMul, a::QSym, ω=cnumber(:ω), t=rnumber(:t); extra_term=true)::QMul
+    out = 1.0
+    for arg in input.args_nc
+        if arg isa Create
+            out *= exp(-im*ω*t)*arg
+        elseif arg isa Destroy
+            out *= exp(im*ω*t)*arg
+        else
+            error("Unknown type: $(typeof(arg))")
+        end
     end
-    out
+    extra_term ? input.arg_c*simplify(out) - im*ω*a'*a : input.arg_c*simplify(out)
 end
-function rotate(H, a; direction=:left, ω=cnumber(:ω))
-    dir_bool =  direction == :left ? true : false
-    X = (-1)^dir_bool*im*ω*a'*a
-    h = perform_hadamard(X, H)
-    simplify(h - im*X)
+function rotate(input::QAdd, a::QSym; extra_term=true)
+    sum(arg -> rotate(arg, a; extra_term=false), input.arguments) - im*ω*a'*a
+end
+function rotate(in::Create, a::QSym; extra_term=true)
+    extra_term ? exp(-im*ω*t)*in - im*ω*a'*a : exp(-im*ω*t)*in
+end
+function rotate(in::Destroy, a::QSym; extra_term=true)
+    extra_term ? exp(im*ω*t)*in - im*ω*a'*a : exp(im*ω*t)*in
 end

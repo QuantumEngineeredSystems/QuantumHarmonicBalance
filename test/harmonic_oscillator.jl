@@ -1,20 +1,41 @@
 using QuantumHarmonicBalance
 using QuantumCumulants; QC = QuantumCumulants
-using ModelingToolkit, OrdinaryDiffEq, Plots
+import Plots
+using ModelingToolkit, OrdinaryDiffEq
 
 # Hilbert space
 h = FockSpace(:cavity)
 
 # Parameter
-@cnumbers Δ F κ ω
+@cnumbers Δ F κ ω ω₀
 @qnumbers a::Destroy(h)
+@syms t::Real
 
 QC.commutator(a,a')
 
--im*ω*a'*a  |> dump
-ω |> dump
-a |> dump
-exp = exp()
+# -im*ω*a'*a  |> dump
+# ω |> dump
+# a |> dump
+# exp = exp()
+
+function perform_hadamard(X::QNumber, Y::QNumber)
+    out = Y
+    term = Y
+    i = 0
+    while i == 0 || term != 0
+        term = i == 1 ? Y : commutator(X, term)
+        term = simplify(term/factorial(i))
+        out += term
+    end
+    out
+end
+
+X = -im*ω*a'*a
+H = F*cos( ω*t)*(a' + a)
+simplify(commutator(X, H))
+
+simplify(exp(-im*a'*a)*a*exp(im*a'*a))
+rotate(H, a)
 
 
 H = Δ*a'a + F*(a' + a)
