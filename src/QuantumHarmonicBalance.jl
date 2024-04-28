@@ -4,8 +4,12 @@ using Reexport
 @reexport using QuantumCumulants
 using QuantumOpticsBase
 
+using Symbolics
+export @variables
+
+include("utils.jl")
 include("rotate.jl")
-export perform_hadamard, rotate
+export rotate
 include("types.jl")
 
 

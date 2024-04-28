@@ -1,17 +1,10 @@
-using DrWatson, Test
-@quickactivate "QuantumHarmonicBalance"
+using QuantumHarmonicBalance
+using Test
 
-# Here you include files using `srcdir`
-# include(srcdir("file.jl"))
+using Random
+const SEED = 0xd8e5d8df
+Random.seed!(SEED)
 
-# Run test suite
-println("Starting tests")
-ti = time()
-
-@testset "QuantumHarmonicBalance tests" begin
-    @test 1 == 1
+@testset "Rotate"
+    include("rotate.jl")
 end
-
-ti = time() - ti
-println("\nTest took total time of:")
-println(round(ti/60, digits = 3), " minutes")
