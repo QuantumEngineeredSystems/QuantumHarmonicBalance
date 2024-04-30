@@ -2,6 +2,7 @@ name = "QuantumHarmonicBalance"
 authors = ["Orjan Ameye"]
 
 [deps]
+DocStringExtensions = "ffbed154-4ef7-542d-bbb7-c09d3a79fcae"
 HarmonicBalance = "e13b9ff6-59c3-11ec-14b1-f3d2cc6c135e"
 ModelingToolkit = "961ee093-0014-501f-94e3-6117800e7a78"
 OrderedCollections = "bac558e1-5e72-5ebc-8fee-abe8a469f55d"
