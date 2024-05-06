@@ -11,7 +11,8 @@ export @variables
 include("utils.jl")
 include("Symbolic_utils.jl")
 include("rotate.jl")
-export rotate
+include("Fourier_components.jl")
+export rotate, get_fourier_components
 include("types.jl")
 
 
