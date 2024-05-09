@@ -1,59 +1,52 @@
-using QuantumHarmonicBalance: QAdd, QMul
+using Symbolics: occursin, substitute
+using SymbolicUtils: BasicSymbolic
 
-# is_number(x) = x isa Number
-# is_imaginary(x) = x isa Number && imag(x) != 0
-# is_real(x) = x isa Number && imag(x) == 0.0
+Qexpression = Union{QTerm, QSym, Number, BasicSymbolic}
 
-# function add_components!(dict, i::Int, components)
-#     i ∈ keys(dict) ? dict[i] += components : dict[i] = components
-#     nothing
-# end
+function is_fourier(x, ω, t)
+    isexp = is_exp(x)
+    hasωt = occursin(ω, x) && occursin(t, x)
+    return isexp && hasωt
+end
+function get_fourier_mul(mul::BasicSymbolic, ω, t)
+    !ismul(mul) ? error("Not a Mul: $mul") : nothing
+    args = arguments(mul)
+    idxs = findall(x -> is_fourier(x, ω, t), args)
+    length(idxs) > 1 ? error("More than one Fourier component: $mul") : nothing
+    rest = args[setdiff(1:end, idxs)]
+    idxs, args[idxs], prod(rest) # Vector{Int}, Vector{BasicSymbolic}, BasicSymbolic
+end
 
-# function determine_fourier_multiple(term)
-#     is_exp(term) || error("Not an exponential.")
-#     exponents = arguments(term)
-#     length(exponents) == 1 || error("Only one exponent is allowed.")
-#     exponent = exponents[1]
-#     ismul(exponent) || error("Not a multiplication.")
-#     idxs = findall(is_number, arguments(exponent))
-#     length(idxs) == 1 || error("Only one number is allowed in the exponential.")
-#     idx = idxs[1]
-#     multiple = arguments(exponent)[idx]
-#     is_imaginary(multiple) || error("The multiple must be imaginary.")
-#     return Int(real(-im * arguments(exponent)[idx]))
-# end
+function add_components!(dict::Dict{Int, Qexpression}, i::Int, components)
+    i ∈ keys(dict) ? dict[i] += components : dict[i] = components
+    nothing
+end
+function add_components!(dict::Dict{Int, Qexpression}, term, ω, t)
+    idxs, exponentials, rest = get_fourier_mul(term, ω, t)
+    if isempty(idxs)
+        add_components!(dict, 0, undo_average(rest))
+    else
+        args = first(arguments(first(exponentials))) # can be dealt with better
+        multiple = substitute(args, Dict(ω=>-im, t=>1)) |> Int
+        add_components!(dict, multiple, undo_average(rest))
+    end
+end
+function get_fourier_components(rot::BasicSymbolic, ω, t)
+    components = Dict{Int, Qexpression}()
+    if isadd(rot)
+        for term in arguments(rot)
+            add_components!(components, term, ω, t)
+        end
+    elseif ismul(rot)
+        add_components!(components, rot, ω, t)
+    else
+        error("Not a sum or product: $rot")
+    end
+    return components
+end
 
-# function extract_exponential(x::QMul)
-#     output = []
-#     for arg in arguments(x)
-#         if is_exp(arg)
-#             append!(output, [arg])
-#         elseif arg isa BasicSymbolic
-#             BS_args = arguments(arg)
-#             exp_idxs = is_exp.(BS_args)
-#             append!(output, BS_args[exp_idxs])
-#         end
-#     end
-#     return output
-# end
-
-# function get_fourier_components(rot::QAdd)
-#     components = Dict{Int, Union{QTerm, QSym, Number}}()
-#     for term in arguments(rot)
-#         if term isa QMul
-#             args = arguments(term)
-#             exponentials = extract_exponential(term)
-#             if length(exponentials) == 1
-#                 multiple = determine_fourier_multiple(exponentials[1])
-#                 add_components!(components, multiple, term)
-#             elseif isempty(exponentials)
-#                 add_components!(components, 0, term)
-#             else
-#                 error("Only one exponential is allowed")
-#             end
-#         else
-#             add_components!(components, 0, term)
-#         end
-#     end
-#     return components
-# end
+function remove_constants(rot::BasicSymbolic)
+    avgsym = filterchildren(w -> w isa BasicSymbolic{QuantumCumulants.AvgSym}, rot)
+    constant = substitute(rot, Dict(avgsym .=> 0))
+    rot - constant
+end

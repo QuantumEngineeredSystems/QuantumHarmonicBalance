@@ -5,17 +5,20 @@ using Reexport
 @reexport using QuantumCumulants
 using QuantumOpticsBase
 
-using Symbolics
-export @variables
+using Symbolics: @variables
+using SymbolicUtils
+using SymbolicUtils: @syms
+export @variables, @syms
 
+include("types.jl")
 include("utils.jl")
 include("Symbolic_utils.jl")
+
 include("rotate.jl")
+export rotate
 include("Fourier_components.jl")
-export rotate, get_fourier_components
-include("types.jl")
-
-
-
+export get_fourier_components
+include("frequency_expansion.jl")
+export rotating_wave_approximation
 
 end

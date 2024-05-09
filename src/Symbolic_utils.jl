@@ -1,9 +1,57 @@
-import Symbolics.SymbolicUtils: quick_cancel;
-using Symbolics.SymbolicUtils: Postwalk #, @compactified
-using Symbolics.SymbolicUtils: Term, Add, Div, Mul, Pow, Sym, BasicSymbolic
-using Symbolics.SymbolicUtils: isterm, ispow, isadd, isdiv, ismul, issym
-using Symbolics: unwrap, get_variables
-using Symbolics.SymbolicUtils: add_with_div, frac_similarterm
+import SymbolicUtils: quick_cancel;
+using SymbolicUtils: Postwalk, @compactified
+using SymbolicUtils: Term, Add, Div, Mul, Pow, Sym, BasicSymbolic
+using SymbolicUtils: isterm, ispow, isadd, isdiv, ismul, issym
+using Symbolics: unwrap, get_variables, substitute, simplify
+using SymbolicUtils: add_with_div, frac_similarterm
+
+# Taken from Symbolics v5.28
+"""
+filterchildren(c, x)
+Returns all parts of `x` that fufills the condition given in c. c can be a function or an expression.
+If it is a function, returns everything for which the function is `true`. If c is an expression, returns
+all expressions that matches it.
+
+Examples:
+```julia
+@syms x
+Symbolics.filterchildren(x, log(x) + x + 1)
+```
+returns `[x, x]`
+
+```julia
+@variables t X(t)
+D = Differential(t)
+Symbolics.filterchildren(Symbolics.is_derivative, X + D(X) + D(X^2))
+```
+returns `[Differential(t)(X(t)^2), Differential(t)(X(t))]`
+"""
+filterchildren(r, y) = filterchildren!(r, y, [])
+
+function filterchildren!(r::Any, y, acc)
+    y = unwrap(y)
+    r = unwrap(r)
+    if isequal(r, y)
+        push!(acc, y)
+        return acc
+    elseif r isa Function
+        if r(y)
+            push!(acc, y)
+            return acc
+        end
+    end
+
+    if istree(y)
+        if isequal(r, operation(y))
+            push!(acc, operation(y))
+        elseif r isa Function && r(operation(y))
+            push!(acc, operation(y))
+        end
+        foreach(c->filterchildren!(r, c, acc),
+                arguments(y))
+        return acc
+    end
+end
 
 # change SymbolicUtils' quick_cancel to simplify powers of fractions correctly
 function quick_cancel(x::Term, y::Term)
@@ -52,14 +100,14 @@ expand_all(x) = Postwalk(expand_exp_power)(SymbolicUtils.expand(x))
 # end
 # # We could use @compactified to do the achive thing wit a speed-up. Neverthless, it yields less readable code.
 # # @compactified is what SymbolicUtils uses internally
-# # function _apply_termwise(f, x::BasicSymbolic)
-# #     @compactified x::BasicSymbolic begin
-# #     Add  => sum([f(arg) for arg in arguments(x)])
-# #     Mul  => prod([f(arg) for arg in arguments(x)])
-# #     Div  =>  _apply_termwise(f, x.num) / _apply_termwise(f, x.den)
-# #     _    => f(x)
-# #     end
-# # end
+# function _apply_termwise(f, x::BasicSymbolic)
+#     @compactified x::BasicSymbolic begin
+#     Add  => sum([f(arg) for arg in arguments(x)])
+#     Mul  => prod([f(arg) for arg in arguments(x)])
+#     Div  =>  _apply_termwise(f, x.num) / _apply_termwise(f, x.den)
+#     _    => f(x)
+#     end
+# end
 
 # simplify_complex(x::Complex) = isequal(x.im, 0) ? x.re : x.re + im*x.im
 # simplify_complex(x) = x
@@ -313,7 +361,7 @@ function trig_to_exp(x::BasicSymbolic)
 
         append!(rules, [trig => term])
     end
-    result = Symbolics.substitute(x, Dict(rules))
+    result = substitute(x, Dict(rules))
     return simplify(expand_all(result))
 end
 
