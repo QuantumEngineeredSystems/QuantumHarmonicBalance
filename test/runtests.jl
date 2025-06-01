@@ -5,6 +5,6 @@ using Random
 const SEED = 0xd8e5d8df
 Random.seed!(SEED)
 
-@testset "Rotate"
+@testset "Rotate" begin
     include("rotate.jl")
 end
